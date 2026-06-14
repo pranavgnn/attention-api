@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "AttentionAPI",
+  "version": "1.0.0",
+  "description": "Rate limiter for human attention.",
+  "permissions": ["tabs", "storage", "alarms", "activeTab", "scripting"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "src/background/background.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content/content.ts"]
+    }
+  ],
+  "action": {
+    "default_popup": "src/popup/index.html"
+  },
+  "options_page": "src/options/index.html",
+  "web_accessible_resources": [
+    {
+      "resources": ["src/pages/blocked/index.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

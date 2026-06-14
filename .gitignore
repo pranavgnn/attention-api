@@ -1,0 +1,18 @@
+# build
+dist/
+
+# dependencies
+node_modules/
+pnpm-lock.yaml
+
+# local env
+.env
+.env.local
+
+# system
+.DS_Store
+Thumbs.db
+
+# ide
+.vscode/
+.idea/
