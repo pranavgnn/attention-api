@@ -20,9 +20,7 @@ async function checkStatus() {
 
   if (shouldBeBlocked) {
     if (!isCurrentlyBlocked) {
-      // Inverted logic: Show refill sources listed for THIS domain
       const refillSources = config.refillSources?.map(s => normalizeDomain(s.domain)) || [];
-      
       currentThrottledAt = state.throttledAt;
       currentCooldown = config.cooldownMinutes;
       blockPage(domain, refillSources);
@@ -42,50 +40,54 @@ function blockPage(domain: string, refillSources: string[]) {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>429 too many requests</title>
+      <title>system.interrupt | 429</title>
       <style>
-        :root { --bg: #0a0b10; --surface: #0f111a; --border: #1e1b4b; --accent: #6366f1; --red: #ef4444; --green: #4ade80; --text: #94a3b8; --text-bright: #f8fafc; }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg); color: var(--text); font-family: 'Inter', 'JetBrains Mono', monospace; display: flex; align-items: center; justify-content: center; min-height: 100vh; text-transform: lowercase; overflow: hidden; }
-        .container { max-width: 440px; width: 90%; animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
-        .meta { color: var(--accent); font-size: 10px; font-weight: 700; letter-spacing: 0.2em; margin-bottom: 16px; opacity: 0.8; }
-        h1 { color: var(--text-bright); font-size: 20px; font-weight: 500; margin-bottom: 8px; letter-spacing: -0.01em; }
-        .desc { font-size: 13px; color: #64748b; margin-bottom: 40px; }
-        .domain { color: var(--accent); font-weight: 600; }
-        .card { background: var(--surface); border: 1px solid var(--border); padding: 32px; border-radius: 4px; margin-bottom: 40px; position: relative; }
-        .card::before { content: ''; position: absolute; top: -1px; left: 20px; right: 20px; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.3; }
-        .label { color: var(--red); font-size: 10px; font-weight: 700; letter-spacing: 0.15em; margin-bottom: 12px; }
-        #timer { color: var(--text-bright); font-size: 40px; font-weight: 300; font-family: 'JetBrains Mono', monospace; tabular-nums: true; }
-        .refill-section { text-align: left; }
-        .refill-label { color: var(--green); font-size: 10px; font-weight: 700; letter-spacing: 0.15em; margin-bottom: 16px; }
-        .refill-list { display: flex; flex-direction: column; gap: 8px; }
-        .refill-item { display: flex; justify-content: space-between; align-items: center; background: var(--surface); border: 1px solid var(--border); padding: 12px 16px; color: var(--text); text-decoration: none; border-radius: 4px; font-size: 12px; transition: all 0.2s ease; }
-        .refill-item:hover { border-color: var(--accent); color: var(--text-bright); transform: translateX(4px); }
-        .refill-item span:last-child { color: var(--accent); font-size: 10px; font-weight: 600; }
-        .empty { color: #475569; font-size: 11px; font-style: italic; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        :root { --bg: #05060a; --surface: #0a0c14; --border: #1a1d2e; --accent: #6366f1; --red: #f43f5e; --green: #10b981; --text: #818cf8; --text-dim: #475569; --text-bright: #e2e8f0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
+        body { background: var(--bg); color: var(--text-bright); font-family: 'JetBrains Mono', 'Menlo', monospace; display: flex; align-items: center; justify-content: center; min-height: 100vh; text-transform: lowercase; overflow: hidden; }
+        .terminal { max-width: 480px; width: 90%; border: 1px solid var(--border); background: var(--surface); border-radius: 6px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); position: relative; overflow: hidden; animation: slideIn 0.4s ease-out; }
+        .terminal-header { background: #111425; padding: 10px 16px; border-bottom: 1px solid var(--border); display: flex; gap: 6px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); }
+        .content { padding: 40px; }
+        .meta { color: var(--accent); font-size: 11px; font-weight: 700; margin-bottom: 24px; display: flex; align-items: center; gap: 8px; }
+        .meta::before { content: ''; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 10px var(--accent); }
+        h1 { font-size: 20px; font-weight: 500; margin-bottom: 12px; color: var(--text-bright); }
+        .desc { font-size: 13px; color: var(--text-dim); margin-bottom: 40px; line-height: 1.6; }
+        .domain { color: var(--accent); border-bottom: 1px dashed var(--accent); }
+        .timer-box { margin-bottom: 40px; }
+        .label { font-size: 10px; color: var(--red); font-weight: 700; letter-spacing: 0.1em; margin-bottom: 8px; }
+        #timer { font-size: 48px; color: var(--text-bright); letter-spacing: -0.02em; }
+        .refill-label { font-size: 10px; color: var(--green); font-weight: 700; letter-spacing: 0.1em; margin-bottom: 16px; }
+        .list { display: flex; flex-direction: column; gap: 10px; }
+        .item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border: 1px solid var(--border); border-radius: 4px; text-decoration: none; color: var(--text-dim); font-size: 13px; transition: all 0.2s; }
+        .item:hover { border-color: var(--accent); background: #111425; color: var(--text-bright); transform: scale(1.02); }
+        .arrow { color: var(--accent); font-weight: bold; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
       </style>
     </head>
     <body>
-      <div class="container">
-        <div class="meta">[system.interrupt]</div>
-        <h1>429: too many requests</h1>
-        <p class="desc">attention reserve depleted for <span class="domain">${domain}</span></p>
-        
-        <div class="card">
-          <div class="label">cooldown.active</div>
-          <div id="timer">--:--</div>
-        </div>
+      <div class="terminal">
+        <div class="terminal-header"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        <div class="content">
+          <div class="meta">attention_api // signal.interrupted</div>
+          <h1>rate limit exceeded</h1>
+          <p class="desc">resource <span class="domain">${domain}</span> is locked. focus reserve depleted.</p>
+          
+          <div class="timer-box">
+            <div class="label">cooldown_active</div>
+            <div id="timer">--:--</div>
+          </div>
 
-        <div class="refill-section">
-          <div class="refill-label">refill.sources</div>
-          <div class="refill-list">
-            ${refillSources.length > 0 ? refillSources.map(s => `
-              <a href="https://${s}" class="refill-item">
-                <span>${s}</span>
-                <span>→ protocol</span>
-              </a>
-            `).join("") : `<div class="empty">no active refill sources configured.</div>`}
+          <div class="refill-section">
+            <div class="refill-label">unlock_pathways</div>
+            <div class="list">
+              ${refillSources.length > 0 ? refillSources.map(s => `
+                <a href="https://${s}" class="item">
+                  <span>${s}</span>
+                  <span class="arrow">GO_REFILL</span>
+                </a>
+              `).join("") : `<div style="color: var(--text-dim); font-size: 11px; font-style: italic;">no refill sources configured for this node.</div>`}
+            </div>
           </div>
         </div>
       </div>
