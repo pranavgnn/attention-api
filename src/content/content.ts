@@ -4,7 +4,8 @@ import { normalizeDomain } from "../shared/configParser";
 
 let countdownInterval: number | null = null;
 let isCurrentlyBlocked = false;
-let originalHTML = "";
+let currentThrottledAt: number | null = null;
+let currentCooldown: number = 0;
 
 async function checkStatus() {
   const data = await chrome.storage.local.get(STORAGE_KEY);
@@ -17,28 +18,30 @@ async function checkStatus() {
 
   const shouldBeBlocked = state && state.status === "throttled";
 
-  if (shouldBeBlocked && !isCurrentlyBlocked) {
-    const refillSources = Object.keys(storage.config).filter(d => 
-      storage.config[d].refillTargets && 
-      storage.config[d].refillTargets.some(t => normalizeDomain(t.domain) === domain)
-    );
-    blockPage(domain, state.throttledAt, config.cooldownMinutes, refillSources);
-  } else if (!shouldBeBlocked && isCurrentlyBlocked) {
+  if (shouldBeBlocked) {
+    if (!isCurrentlyBlocked) {
+      // Find all sites that refill THIS domain
+      const refillSources = Object.keys(storage.config).filter(d => {
+        const siteConfig = storage.config[d];
+        return siteConfig.refillTargets && siteConfig.refillTargets.some(t => normalizeDomain(t.domain) === domain);
+      });
+      
+      currentThrottledAt = state.throttledAt;
+      currentCooldown = config.cooldownMinutes;
+      blockPage(domain, refillSources);
+    } else {
+      // Update internal state for timer if it changed (unlikely but safe)
+      currentThrottledAt = state.throttledAt;
+      currentCooldown = config.cooldownMinutes;
+    }
+  } else if (isCurrentlyBlocked) {
     unblockPage();
-  } else if (shouldBeBlocked && isCurrentlyBlocked) {
-    // Just update countdown if already blocked
-    updateCountdown(state.throttledAt, config.cooldownMinutes);
   }
 }
 
-function blockPage(domain: string, throttledAt: number | null, cooldown: number, refillSources: string[]) {
+function blockPage(domain: string, refillSources: string[]) {
   isCurrentlyBlocked = true;
-  originalHTML = document.documentElement.innerHTML;
-
-  const remainingSeconds = throttledAt ? Math.max(0, Math.ceil((throttledAt + cooldown * 60 * 1000 - Date.now()) / 1000)) : 0;
-  const initialM = Math.floor(remainingSeconds / 60);
-  const initialS = remainingSeconds % 60;
-
+  
   const html = `
     <head>
       <meta charset="UTF-8">
@@ -75,7 +78,7 @@ function blockPage(domain: string, throttledAt: number | null, cooldown: number,
         
         <div class="card">
           <div class="label">cooldown.active</div>
-          <div id="timer">${initialM.toString().padStart(2, '0')}:${initialS.toString().padStart(2, '0')}</div>
+          <div id="timer">--:--</div>
         </div>
 
         <div class="refill-section">
@@ -94,22 +97,23 @@ function blockPage(domain: string, throttledAt: number | null, cooldown: number,
   `;
 
   document.documentElement.innerHTML = html;
-  startCountdown(throttledAt, cooldown);
+  startCountdown();
 }
 
-function startCountdown(throttledAt: number | null, cooldown: number) {
+function startCountdown() {
   if (countdownInterval) clearInterval(countdownInterval);
   
   const update = () => {
     const timerEl = document.getElementById("timer");
-    if (!timerEl || !throttledAt) return;
+    if (!timerEl || !currentThrottledAt) return;
 
-    const expiry = throttledAt + (cooldown * 60 * 1000);
+    const expiry = currentThrottledAt + (currentCooldown * 60 * 1000);
     const diff = expiry - Date.now();
     
     if (diff <= 0) {
       timerEl.innerText = "00:00";
       clearInterval(countdownInterval!);
+      countdownInterval = null;
       checkStatus();
       return;
     }
@@ -123,22 +127,13 @@ function startCountdown(throttledAt: number | null, cooldown: number) {
   countdownInterval = window.setInterval(update, 1000);
 }
 
-function updateCountdown(throttledAt: number | null, cooldown: number) {
-  // If timer element missing but we should be blocked, re-run checkStatus
-  if (!document.getElementById("timer") && isCurrentlyBlocked) {
-    isCurrentlyBlocked = false; // Force re-block
-    checkStatus();
-    return;
-  }
-}
-
 function unblockPage() {
   isCurrentlyBlocked = false;
   if (countdownInterval) {
     clearInterval(countdownInterval);
     countdownInterval = null;
   }
-  window.location.reload(); // Hard reload is safest after replacing entire innerHTML
+  window.location.reload();
 }
 
 chrome.storage.onChanged.addListener((changes) => {
@@ -147,4 +142,5 @@ chrome.storage.onChanged.addListener((changes) => {
   }
 });
 
+// Initial check
 checkStatus();
