@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const RefillTargetSchema = z.object({
+export const RefillSourceSchema = z.object({
   domain: z.string().min(1),
   amount: z.number().min(0),
 });
@@ -10,7 +10,7 @@ export const SiteConfigSchema = z.object({
   drainRate: z.number().min(0),
   regenRate: z.number().min(0).default(0),
   cooldownMinutes: z.number().min(0),
-  refillTargets: z.array(RefillTargetSchema),
+  refillSources: z.array(RefillSourceSchema),
 });
 
 export const StorageConfigSchema = z.record(z.string(), SiteConfigSchema);

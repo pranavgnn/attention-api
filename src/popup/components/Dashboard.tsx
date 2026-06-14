@@ -31,7 +31,7 @@ const Dashboard: React.FC = () => {
       drainRate: 10, 
       regenRate: 0,
       cooldownMinutes: 30, 
-      refillTargets: [] 
+      refillSources: [] 
     };
     const newState: SiteState = { 
       currentTokens: 100, 

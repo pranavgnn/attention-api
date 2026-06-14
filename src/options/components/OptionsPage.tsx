@@ -84,7 +84,7 @@ const OptionsPage: React.FC = () => {
   const updateField = (domain: string, field: keyof SiteConfig, rawVal: string) => {
     if (!data) return;
     
-    const isNum = ["maxTokens", "drainRate", "cooldownMinutes"].includes(field);
+    const isNum = ["maxTokens", "drainRate", "cooldownMinutes", "regenRate"].includes(field);
     const val = isNum ? (rawVal === "" ? "" : parseInt(rawVal)) : rawVal;
 
     const config = { ...data.config, [domain]: { ...data.config[domain], [field]: val } };
@@ -106,31 +106,31 @@ const OptionsPage: React.FC = () => {
     }
   };
 
-  const addRefillTarget = (domain: string) => {
+  const addRefillSource = (domain: string) => {
     if (!data) return;
     const site = data.config[domain];
-    const targets = [...site.refillTargets, { domain: "new-site.com", amount: 20 }];
-    const config = { ...data.config, [domain]: { ...site, refillTargets: targets } };
+    const sources = [...(site.refillSources || []), { domain: "new-site.com", amount: 20 }];
+    const config = { ...data.config, [domain]: { ...site, refillSources: sources } };
     save(config);
   };
 
-  const removeRefillTarget = (domain: string, index: number) => {
+  const removeRefillSource = (domain: string, index: number) => {
     if (!data) return;
-    const targets = data.config[domain].refillTargets.filter((_, i) => i !== index);
-    const config = { ...data.config, [domain]: { ...data.config[domain], refillTargets: targets } };
+    const sources = data.config[domain].refillSources.filter((_, i) => i !== index);
+    const config = { ...data.config, [domain]: { ...data.config[domain], refillSources: sources } };
     save(config);
   };
 
-  const updateRefillTarget = (domain: string, index: number, field: "domain" | "amount", rawVal: string) => {
+  const updateRefillSource = (domain: string, index: number, field: "domain" | "amount", rawVal: string) => {
     if (!data) return;
     
     const val = field === "amount" ? (rawVal === "" ? "" : parseInt(rawVal)) : rawVal;
-    const targets = [...data.config[domain].refillTargets];
-    const target = targets[index];
-    if (field === "domain") target.domain = normalizeDomain(rawVal);
-    else if (field === "amount") target.amount = val as number;
+    const sources = [...data.config[domain].refillSources];
+    const source = sources[index];
+    if (field === "domain") source.domain = normalizeDomain(rawVal);
+    else if (field === "amount") source.amount = val as number;
 
-    const config = { ...data.config, [domain]: { ...data.config[domain], refillTargets: targets } };
+    const config = { ...data.config, [domain]: { ...data.config[domain], refillSources: sources } };
     setData({ ...data, config: config as any });
 
     if (val !== "" && (field !== "amount" || !isNaN(val as number))) {
@@ -197,15 +197,15 @@ const OptionsPage: React.FC = () => {
 
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <div className="t-label text-[11px]">refill targets <Tooltip text="Visiting this site adds tokens to these targets." /></div>
-                      <button onClick={() => addRefillTarget(domain)} className="text-[10px] text-accent hover:underline">+ add</button>
+                      <div className="t-label text-[11px]">refill sources <Tooltip text="Visiting these sites adds tokens to THIS site." /></div>
+                      <button onClick={() => addRefillSource(domain)} className="text-[10px] text-accent hover:underline">+ add</button>
                     </div>
                     <div className="space-y-2.5">
-                      {site.refillTargets.map((target, idx) => (
+                      {site.refillSources?.map((source, idx) => (
                         <div key={idx} className="flex items-center space-x-3 bg-background/50 p-3 rounded border border-border/50">
-                          <input type="text" className="t-input flex-1 !bg-transparent !border-none p-0 text-sm" value={target.domain} onChange={e => updateRefillTarget(domain, idx, "domain", e.target.value)} />
-                          <input type="number" className="t-input w-16 !bg-transparent !border-none p-0 text-right text-green text-sm" value={target.amount} onChange={e => updateRefillTarget(domain, idx, "amount", e.target.value)} />
-                          <button onClick={() => removeRefillTarget(domain, idx)} className="text-red/60 hover:text-red px-2 text-lg">×</button>
+                          <input type="text" className="t-input flex-1 !bg-transparent !border-none p-0 text-sm" value={source.domain} onChange={e => updateRefillSource(domain, idx, "domain", e.target.value)} />
+                          <input type="number" className="t-input w-16 !bg-transparent !border-none p-0 text-right text-green text-sm" value={source.amount} onChange={e => updateRefillSource(domain, idx, "amount", e.target.value)} />
+                          <button onClick={() => removeRefillSource(domain, idx)} className="text-red/60 hover:text-red px-2 text-lg">×</button>
                         </div>
                       ))}
                     </div>
@@ -218,7 +218,7 @@ const OptionsPage: React.FC = () => {
                 const d = prompt("domain:");
                 if (d) {
                   const norm = normalizeDomain(d);
-                  const config = { ...data.config, [norm]: { maxTokens: 100, drainRate: 10, regenRate: 0, cooldownMinutes: 30, refillTargets: [] } };
+                  const config = { ...data.config, [norm]: { maxTokens: 100, drainRate: 10, regenRate: 0, cooldownMinutes: 30, refillSources: [] } };
                   save(config);
                 }
               }}

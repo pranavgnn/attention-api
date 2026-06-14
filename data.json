@@ -1,0 +1,146 @@
+{
+  "config": {
+    "duolingo.com": {
+      "cooldownMinutes": 0,
+      "drainRate": 0,
+      "maxTokens": 200,
+      "refillTargets": [
+        { "amount": 15, "domain": "twitter.com" },
+        { "amount": 15, "domain": "instagram.com" }
+      ],
+      "regenRate": 0
+    },
+    "github.com": {
+      "cooldownMinutes": 10,
+      "drainRate": 1,
+      "maxTokens": 300,
+      "refillTargets": [],
+      "regenRate": 0
+    },
+    "instagram.com": {
+      "cooldownMinutes": 30,
+      "drainRate": 10,
+      "maxTokens": 100,
+      "refillTargets": [],
+      "regenRate": 0
+    },
+    "read.amazon.com": {
+      "cooldownMinutes": 0,
+      "drainRate": 0,
+      "maxTokens": 200,
+      "refillTargets": [
+        { "amount": 20, "domain": "twitter.com" },
+        { "amount": 20, "domain": "reddit.com" }
+      ],
+      "regenRate": 0
+    },
+    "reddit.com": {
+      "cooldownMinutes": 30,
+      "drainRate": 8,
+      "maxTokens": 100,
+      "refillTargets": [],
+      "regenRate": 0
+    },
+    "twitter.com": {
+      "cooldownMinutes": 30,
+      "drainRate": 10,
+      "maxTokens": 100,
+      "refillTargets": [],
+      "regenRate": 0
+    },
+    "youtube.com": {
+      "cooldownMinutes": 2,
+      "drainRate": 150,
+      "maxTokens": 150,
+      "refillTargets": [{ "amount": 20, "domain": "reddit.com" }],
+      "regenRate": 20
+    }
+  },
+  "lastReset": 1781449415788,
+  "state": {
+    "duolingo.com": {
+      "currentTokens": 200,
+      "overrides": [],
+      "status": "active",
+      "throttledAt": null,
+      "timeSpentToday": 0,
+      "tokenHistory": [
+        { "timestamp": 1781449440781, "tokens": 200 },
+        { "timestamp": 1781449560773, "tokens": 200 },
+        { "timestamp": 1781449620775, "tokens": 200 }
+      ]
+    },
+    "github.com": {
+      "currentTokens": 300,
+      "overrides": [],
+      "status": "active",
+      "throttledAt": null,
+      "timeSpentToday": 0,
+      "tokenHistory": [
+        { "timestamp": 1781449440781, "tokens": 300 },
+        { "timestamp": 1781449560773, "tokens": 300 },
+        { "timestamp": 1781449620775, "tokens": 300 }
+      ]
+    },
+    "instagram.com": {
+      "currentTokens": 100,
+      "overrides": [],
+      "status": "active",
+      "throttledAt": null,
+      "timeSpentToday": 0,
+      "tokenHistory": [
+        { "timestamp": 1781449440781, "tokens": 100 },
+        { "timestamp": 1781449560773, "tokens": 100 },
+        { "timestamp": 1781449620775, "tokens": 100 }
+      ]
+    },
+    "read.amazon.com": {
+      "currentTokens": 200,
+      "overrides": [],
+      "status": "active",
+      "throttledAt": null,
+      "timeSpentToday": 0,
+      "tokenHistory": [
+        { "timestamp": 1781449440781, "tokens": 200 },
+        { "timestamp": 1781449560773, "tokens": 200 },
+        { "timestamp": 1781449620775, "tokens": 200 }
+      ]
+    },
+    "reddit.com": {
+      "currentTokens": 100,
+      "overrides": [],
+      "status": "active",
+      "throttledAt": null,
+      "timeSpentToday": 0,
+      "tokenHistory": [
+        { "timestamp": 1781449440781, "tokens": 100 },
+        { "timestamp": 1781449560773, "tokens": 100 },
+        { "timestamp": 1781449620775, "tokens": 100 }
+      ]
+    },
+    "twitter.com": {
+      "currentTokens": 100,
+      "overrides": [],
+      "status": "active",
+      "throttledAt": null,
+      "timeSpentToday": 0,
+      "tokenHistory": [
+        { "timestamp": 1781449440781, "tokens": 100 },
+        { "timestamp": 1781449560773, "tokens": 100 },
+        { "timestamp": 1781449620775, "tokens": 100 }
+      ]
+    },
+    "youtube.com": {
+      "currentTokens": 0,
+      "overrides": [],
+      "status": "throttled",
+      "throttledAt": 1781449607781,
+      "timeSpentToday": 92,
+      "tokenHistory": [
+        { "timestamp": 1781449440781, "tokens": 150 },
+        { "timestamp": 1781449560773, "tokens": 115.82222222222234 },
+        { "timestamp": 1781449620775, "tokens": 0 }
+      ]
+    }
+  }
+}

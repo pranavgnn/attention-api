@@ -20,16 +20,8 @@ async function checkStatus() {
 
   if (shouldBeBlocked) {
     if (!isCurrentlyBlocked) {
-      // Find all sites that refill THIS domain
-      const refillSources = Object.keys(storage.config).filter(srcDomain => {
-        const siteConfig = storage.config[srcDomain];
-        if (!siteConfig.refillTargets) return false;
-        
-        return siteConfig.refillTargets.some(target => {
-          const normTarget = normalizeDomain(target.domain);
-          return normTarget === domain;
-        });
-      });
+      // Inverted logic: Show refill sources listed for THIS domain
+      const refillSources = config.refillSources?.map(s => normalizeDomain(s.domain)) || [];
       
       currentThrottledAt = state.throttledAt;
       currentCooldown = config.cooldownMinutes;
@@ -146,5 +138,4 @@ chrome.storage.onChanged.addListener((changes) => {
   }
 });
 
-// Initial check
 checkStatus();

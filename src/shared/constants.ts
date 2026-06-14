@@ -6,55 +6,56 @@ export const DEFAULT_CONFIG: Record<string, SiteConfig> = {
     drainRate: 10,
     regenRate: 0,
     cooldownMinutes: 30,
-    refillTargets: [],
+    refillSources: [
+      { domain: "read.amazon.com", amount: 20 },
+      { domain: "duolingo.com", amount: 15 }
+    ],
   },
   "reddit.com": {
     maxTokens: 100,
     drainRate: 8,
     regenRate: 0,
     cooldownMinutes: 30,
-    refillTargets: [],
+    refillSources: [
+      { domain: "read.amazon.com", amount: 20 }
+    ],
   },
   "instagram.com": {
     maxTokens: 100,
     drainRate: 10,
     regenRate: 0,
     cooldownMinutes: 30,
-    refillTargets: [],
+    refillSources: [
+      { domain: "duolingo.com", amount: 15 }
+    ],
   },
   "youtube.com": {
     maxTokens: 150,
     drainRate: 6,
     regenRate: 0,
     cooldownMinutes: 20,
-    refillTargets: [],
+    refillSources: [],
   },
   "read.amazon.com": {
     maxTokens: 200,
     drainRate: 0,
     regenRate: 0,
     cooldownMinutes: 0,
-    refillTargets: [
-      { domain: "twitter.com", amount: 20 },
-      { domain: "reddit.com", amount: 20 },
-    ],
+    refillSources: [],
   },
   "duolingo.com": {
     maxTokens: 200,
     drainRate: 0,
     regenRate: 0,
     cooldownMinutes: 0,
-    refillTargets: [
-      { domain: "twitter.com", amount: 15 },
-      { domain: "instagram.com", amount: 15 },
-    ],
+    refillSources: [],
   },
   "github.com": {
     maxTokens: 300,
     drainRate: 1,
     regenRate: 0,
     cooldownMinutes: 10,
-    refillTargets: [],
+    refillSources: [],
   },
 };
 

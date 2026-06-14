@@ -11,6 +11,7 @@ export async function tick(activeDomain: string | null): Promise<void> {
 
     if (!config || !state) continue;
 
+    // Cooldown check
     if (state.status === "throttled" || state.status === "cooldown") {
       if (state.throttledAt) {
         const cooldownMs = config.cooldownMinutes * 60 * 1000;
@@ -22,12 +23,11 @@ export async function tick(activeDomain: string | null): Promise<void> {
       }
     }
 
+    // Active domain logic (Drain)
     if (domain === activeDomain) {
-      // timeSpentToday is in seconds now for real-time tracking
       state.timeSpentToday += 1;
       
       if (state.status === "active") {
-        // Drain per second (drainRate is per minute)
         const drainPerSecond = config.drainRate / 60;
         state.currentTokens -= drainPerSecond;
         
@@ -35,21 +35,6 @@ export async function tick(activeDomain: string | null): Promise<void> {
           state.currentTokens = 0;
           state.status = "throttled";
           state.throttledAt = now;
-        }
-
-        if (config.refillTargets.length > 0) {
-          for (const refill of config.refillTargets) {
-            const targetNorm = normalizeDomain(refill.domain);
-            const targetState = storage.state[targetNorm];
-            const targetConfig = storage.config[targetNorm];
-            if (targetState && targetConfig) {
-              const refillPerSecond = refill.amount / 60;
-              targetState.currentTokens = Math.min(
-                targetConfig.maxTokens,
-                targetState.currentTokens + refillPerSecond
-              );
-            }
-          }
         }
       }
     } else {
@@ -63,7 +48,25 @@ export async function tick(activeDomain: string | null): Promise<void> {
       }
     }
 
-    // Capture history only once a minute to save space
+    // NEW INVERTED REFILL LOGIC: 
+    // If THIS site is active, we check if ANY OTHER site has THIS site in its refillSources.
+    // Wait, no. If site A is active, it should refill ANY domain B that has A in its refillSources.
+    if (activeDomain) {
+      // Check if THIS domain (the one we are iterating over) lists activeDomain as a source
+      if (config.refillSources && config.refillSources.length > 0) {
+        for (const source of config.refillSources) {
+          if (normalizeDomain(source.domain) === activeDomain) {
+            const refillPerSecond = source.amount / 60;
+            state.currentTokens = Math.min(
+              config.maxTokens,
+              state.currentTokens + refillPerSecond
+            );
+          }
+        }
+      }
+    }
+
+    // Token History
     if (now % 60000 < 1000) {
       state.tokenHistory.push({ timestamp: now, tokens: state.currentTokens });
       if (state.tokenHistory.length > 50) {

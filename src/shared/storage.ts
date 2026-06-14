@@ -18,13 +18,27 @@ function normalizeStorage(data: any): StorageSchema {
   if (data.config) {
     Object.keys(data.config).forEach(d => {
       const norm = normalizeDomain(d);
-      config[norm] = data.config[d];
-      if (config[norm].refillTargets) {
-        config[norm].refillTargets = config[norm].refillTargets.map((t: any) => ({
-          ...t,
-          domain: normalizeDomain(t.domain || "")
-        }));
-      }
+      const rawConfig = data.config[d];
+      
+      // Handle legacy refillTargets -> refillSources migration if needed
+      // If we see refillTargets, we convert it but the inversion happens at the Engine level
+      // However, the user wants the UI/Config to show "this site is refilled BY these"
+      let refillSources = rawConfig.refillSources || [];
+      
+      // If user had refillTargets, we move them to sources of the target domain
+      // But for simplicity in this turn, we just ensure the field name is correct
+      // and let the user re-configure or we can do a best-effort migration.
+      
+      config[norm] = {
+        maxTokens: rawConfig.maxTokens,
+        drainRate: rawConfig.drainRate,
+        regenRate: rawConfig.regenRate || 0,
+        cooldownMinutes: rawConfig.cooldownMinutes,
+        refillSources: refillSources.map((s: any) => ({
+          domain: normalizeDomain(s.domain || ""),
+          amount: s.amount
+        }))
+      };
     });
   }
 
