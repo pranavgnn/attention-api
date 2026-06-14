@@ -9,12 +9,16 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     fetchData();
+    const interval = setInterval(fetchData, 1000);
+    
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]?.url) {
         try { setDomain(new URL(tabs[0].url).hostname.replace("www.", "")); } 
         catch (e) {}
       }
     });
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleTrack = async () => {

@@ -20,9 +20,14 @@ export async function tick(activeDomain: string | null): Promise<void> {
     }
 
     if (domain === activeDomain) {
+      // timeSpentToday is in seconds now for real-time tracking
       state.timeSpentToday += 1;
+      
       if (state.status === "active") {
-        state.currentTokens -= config.drainRate;
+        // Drain per second (drainRate is per minute)
+        const drainPerSecond = config.drainRate / 60;
+        state.currentTokens -= drainPerSecond;
+        
         if (state.currentTokens <= 0) {
           state.currentTokens = 0;
           state.status = "throttled";
@@ -34,9 +39,11 @@ export async function tick(activeDomain: string | null): Promise<void> {
             const targetState = storage.state[refill.domain];
             const targetConfig = storage.config[refill.domain];
             if (targetState && targetConfig) {
+              // Refill amount is also divided by 60 if we assume it's per-minute refill
+              const refillPerSecond = refill.amount / 60;
               targetState.currentTokens = Math.min(
                 targetConfig.maxTokens,
-                targetState.currentTokens + refill.amount
+                targetState.currentTokens + refillPerSecond
               );
             }
           }
@@ -44,9 +51,12 @@ export async function tick(activeDomain: string | null): Promise<void> {
       }
     }
 
-    state.tokenHistory.push({ timestamp: now, tokens: state.currentTokens });
-    if (state.tokenHistory.length > 50) {
-      state.tokenHistory.shift();
+    // Capture history only once a minute to save space
+    if (now % 60000 < 1000) {
+      state.tokenHistory.push({ timestamp: now, tokens: state.currentTokens });
+      if (state.tokenHistory.length > 50) {
+        state.tokenHistory.shift();
+      }
     }
   }
 
