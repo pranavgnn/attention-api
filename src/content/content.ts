@@ -11,13 +11,16 @@ async function checkStatus() {
   const config = storage.config[domain];
 
   if (state && state.status === "throttled") {
-    blockPage(domain, state.throttledAt, config.cooldownMinutes);
+    const refillSources = Object.keys(storage.config).filter(d => 
+      storage.config[d].refillTargets.some(t => t.domain === domain)
+    );
+    blockPage(domain, state.throttledAt, config.cooldownMinutes, refillSources);
   } else {
     unblockPage();
   }
 }
 
-function blockPage(domain: string, throttledAt: number | null, cooldownMinutes: number) {
+function blockPage(domain: string, throttledAt: number | null, cooldownMinutes: number, refillSources: string[]) {
   if (document.getElementById("attention-api-blocker")) return;
 
   const blocker = document.createElement("div");
@@ -61,17 +64,43 @@ function blockPage(domain: string, throttledAt: number | null, cooldownMinutes: 
         <span>cooldown: <span id="blocker-timer" style="color: #f59e0b; font-weight: bold;">${updateTimer()}</span></span>
       </div>
       
-      <div style="text-align: left; border-top: 1px solid #1f2232; pt: 20px;">
+      <div style="text-align: left; border-top: 1px solid #1f2232;">
         <div style="font-size: 10px; color: #94a3b8; margin: 20px 0 10px;">refill strategy</div>
-        <div style="font-size: 13px; color: #cbd5e1; line-height: 1.6;">
-          to restore tokens: visit your configured <span style="color: #6366f1;">refill sources</span> (e.g. github, technical documentation). your reserve will automatically transfer to this domain once the cooldown expires.
+        <div style="font-size: 13px; color: #cbd5e1; line-height: 1.6; margin-bottom: 20px;">
+          to restore tokens: visit your configured <span style="color: #6366f1;">refill sources</span> to transfer tokens to your restricted list.
         </div>
+
+        ${refillSources.length > 0 ? `
+          <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+            ${refillSources.map(s => `
+              <button class="refill-link" data-url="https://${s}" style="background: #12141c; border: 1px solid #1f2232; color: #6366f1; padding: 6px 12px; font-size: 11px; border-radius: 4px; cursor: pointer; transition: all 0.2s; font-family: inherit; text-transform: lowercase;">
+                go to ${s}
+              </button>
+            `).join('')}
+          </div>
+        ` : ''}
       </div>
     </div>
   `;
 
   document.documentElement.appendChild(blocker);
   document.documentElement.style.overflow = "hidden";
+
+  // Add click listeners to buttons
+  blocker.querySelectorAll('.refill-link').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const url = (e.currentTarget as HTMLElement).getAttribute('data-url');
+      if (url) window.location.href = url;
+    });
+    btn.addEventListener('mouseenter', (e) => {
+      (e.currentTarget as HTMLElement).style.borderColor = '#6366f1';
+      (e.currentTarget as HTMLElement).style.background = 'rgba(99, 102, 241, 0.1)';
+    });
+    btn.addEventListener('mouseleave', (e) => {
+      (e.currentTarget as HTMLElement).style.borderColor = '#1f2232';
+      (e.currentTarget as HTMLElement).style.background = '#12141c';
+    });
+  });
 
   const timerInt = setInterval(() => {
     const el = document.getElementById("blocker-timer");
