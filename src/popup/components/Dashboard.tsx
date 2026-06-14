@@ -50,26 +50,26 @@ const Dashboard: React.FC = () => {
   const config = domain ? data.config[domain] : null;
 
   return (
-    <div className="w-[300px] bg-background p-4 flex flex-col space-y-4">
-      <header className="flex justify-between items-center border-b border-border pb-2">
-        <span className="text-xs font-bold tracking-tight lowercase">attention.api</span>
-        <span className="text-[9px] text-text-dim">1.0.0</span>
+    <div className="w-[360px] bg-background p-6 flex flex-col space-y-6">
+      <header className="flex justify-between items-center border-b border-border pb-3">
+        <span className="text-base font-bold tracking-tight lowercase">attention.api</span>
+        <span className="text-xs text-text-dim">1.0.0</span>
       </header>
 
-      <div className="space-y-3">
-        <div className="space-y-0.5">
+      <div className="space-y-4">
+        <div className="space-y-1">
           <label className="t-label">active.domain</label>
-          <div className="text-[11px] font-medium truncate lowercase">{domain || "none"}</div>
+          <div className="text-sm font-medium truncate lowercase">{domain || "none"}</div>
         </div>
 
         {state && config ? (
-          <div className="space-y-3">
-            <div className="space-y-1.5">
+          <div className="space-y-4">
+            <div className="space-y-2">
               <div className="flex justify-between t-label">
                 <span>token.reserve</span>
                 <span>{state.currentTokens.toFixed(0)}/{config.maxTokens}</span>
               </div>
-              <div className="h-1 bg-border overflow-hidden">
+              <div className="h-2 bg-border overflow-hidden">
                 <div 
                   className={`h-full transition-all duration-500 ${state.status === 'throttled' ? 'bg-red' : 'bg-green'}`}
                   style={{ width: `${(state.currentTokens / config.maxTokens) * 100}%` }}
@@ -77,15 +77,15 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <label className="t-label">refill.protocol</label>
-              <p className="text-[10px] text-slate-400 leading-normal lowercase">
+              <p className="text-[11px] text-slate-400 leading-normal lowercase">
                 current site drains tokens. to refill: visit sites configured as <span className="text-accent">refill.sources</span> (e.g. documentation, tools) to transfer tokens to your restricted list.
               </p>
             </div>
           </div>
         ) : domain ? (
-          <button onClick={handleTrack} className="w-full t-btn text-accent border-accent/20 hover:bg-accent/10 py-2">
+          <button onClick={handleTrack} className="w-full t-btn text-accent border-accent/20 hover:bg-accent/10 py-3">
             begin tracking
           </button>
         ) : null}
@@ -93,7 +93,7 @@ const Dashboard: React.FC = () => {
 
       <button 
         onClick={() => chrome.runtime.openOptionsPage()} 
-        className="w-full t-btn text-[10px] py-1.5"
+        className="w-full t-btn text-xs py-2"
       >
         settings
       </button>
