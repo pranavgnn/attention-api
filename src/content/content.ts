@@ -21,16 +21,20 @@ async function checkStatus() {
   if (shouldBeBlocked) {
     if (!isCurrentlyBlocked) {
       // Find all sites that refill THIS domain
-      const refillSources = Object.keys(storage.config).filter(d => {
-        const siteConfig = storage.config[d];
-        return siteConfig.refillTargets && siteConfig.refillTargets.some(t => normalizeDomain(t.domain) === domain);
+      const refillSources = Object.keys(storage.config).filter(srcDomain => {
+        const siteConfig = storage.config[srcDomain];
+        if (!siteConfig.refillTargets) return false;
+        
+        return siteConfig.refillTargets.some(target => {
+          const normTarget = normalizeDomain(target.domain);
+          return normTarget === domain;
+        });
       });
       
       currentThrottledAt = state.throttledAt;
       currentCooldown = config.cooldownMinutes;
       blockPage(domain, refillSources);
     } else {
-      // Update internal state for timer if it changed (unlikely but safe)
       currentThrottledAt = state.throttledAt;
       currentCooldown = config.cooldownMinutes;
     }
