@@ -8,16 +8,16 @@ export function normalizeDomain(domain: string): string {
 export function parseJsonConfig(jsonStr: string): Record<string, SiteConfig> {
   const parsed = JSON.parse(jsonStr);
   
-  // Normalize all keys (domains) and targets in the config object
+  // Normalize all keys (domains) and sources in the config object
   const normalizedConfig: Record<string, SiteConfig> = {};
   for (const domain in parsed) {
     const normKey = normalizeDomain(domain);
     const config = parsed[domain];
     
-    if (config.refillTargets) {
-      config.refillTargets = config.refillTargets.map((t: any) => ({
-        ...t,
-        domain: normalizeDomain(t.domain || t.origin || "")
+    if (config.refillSources) {
+      config.refillSources = config.refillSources.map((s: any) => ({
+        ...s,
+        domain: normalizeDomain(s.domain || s.origin || "")
       }));
     }
     
