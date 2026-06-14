@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useStore } from "../store";
 import { setStorage } from "../../shared/storage";
 import { StorageSchema, SiteConfig, SiteState } from "../../shared/types";
+import { normalizeDomain } from "../../shared/configParser";
 
 const Dashboard: React.FC = () => {
   const { data, fetchData } = useStore();
@@ -13,7 +14,7 @@ const Dashboard: React.FC = () => {
     
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]?.url) {
-        try { setDomain(new URL(tabs[0].url).hostname.replace("www.", "")); } 
+        try { setDomain(normalizeDomain(new URL(tabs[0].url).hostname)); } 
         catch (e) {}
       }
     });
@@ -24,6 +25,7 @@ const Dashboard: React.FC = () => {
   const handleTrack = async () => {
     if (!domain || !data) return;
     
+    const norm = normalizeDomain(domain);
     const newConfig: SiteConfig = { 
       maxTokens: 100, 
       drainRate: 10, 
@@ -42,8 +44,8 @@ const Dashboard: React.FC = () => {
 
     const updated: StorageSchema = {
       ...data,
-      config: { ...data.config, [domain]: newConfig },
-      state: { ...data.state, [domain]: newState },
+      config: { ...data.config, [norm]: newConfig },
+      state: { ...data.state, [norm]: newState },
     };
     await setStorage(updated);
     fetchData();

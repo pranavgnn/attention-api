@@ -1,4 +1,5 @@
 import { getStorage, setStorage } from "./storage";
+import { normalizeDomain } from "./configParser";
 
 export async function tick(activeDomain: string | null): Promise<void> {
   const storage = await getStorage();
@@ -38,8 +39,9 @@ export async function tick(activeDomain: string | null): Promise<void> {
 
         if (config.refillTargets.length > 0) {
           for (const refill of config.refillTargets) {
-            const targetState = storage.state[refill.domain];
-            const targetConfig = storage.config[refill.domain];
+            const targetNorm = normalizeDomain(refill.domain);
+            const targetState = storage.state[targetNorm];
+            const targetConfig = storage.config[targetNorm];
             if (targetState && targetConfig) {
               const refillPerSecond = refill.amount / 60;
               targetState.currentTokens = Math.min(
@@ -74,8 +76,9 @@ export async function tick(activeDomain: string | null): Promise<void> {
 }
 
 export async function applyOverride(domain: string, reason: string): Promise<void> {
+  const norm = normalizeDomain(domain);
   const storage = await getStorage();
-  const state = storage.state[domain];
+  const state = storage.state[norm];
   if (state) {
     state.status = "active";
     state.currentTokens = 10;

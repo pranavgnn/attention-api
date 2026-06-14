@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { getStorage, setStorage } from "../../shared/storage";
 import { StorageSchema, SiteConfig, StorageConfigSchema } from "../../shared/types";
-import { parseJsonConfig, stringifyToJson } from "../../shared/configParser";
+import { parseJsonConfig, stringifyToJson, normalizeDomain } from "../../shared/configParser";
 import CodeMirror from "@uiw/react-codemirror";
 import { json } from "@codemirror/lang-json";
 import { vscodeDark } from "@uiw/codemirror-theme-vscode";
@@ -46,7 +46,13 @@ const OptionsPage: React.FC = () => {
   const save = async (config: Record<string, SiteConfig>, showToast = true) => {
     if (!data) return;
     
-    const result = StorageConfigSchema.safeParse(config);
+    // Normalize all keys in config
+    const normalizedConfig: Record<string, SiteConfig> = {};
+    Object.keys(config).forEach(d => {
+      normalizedConfig[normalizeDomain(d)] = config[d];
+    });
+
+    const result = StorageConfigSchema.safeParse(normalizedConfig);
     if (!result.success) {
       if (showToast) {
         const firstError = result.error.issues[0];
@@ -56,8 +62,8 @@ const OptionsPage: React.FC = () => {
     }
 
     const state = { ...data.state };
-    Object.keys(config).forEach(d => {
-      if (!state[d]) state[d] = { currentTokens: config[d].maxTokens, status: "active", throttledAt: null, timeSpentToday: 0, tokenHistory: [], overrides: [] };
+    Object.keys(result.data).forEach(d => {
+      if (!state[d]) state[d] = { currentTokens: result.data[d].maxTokens, status: "active", throttledAt: null, timeSpentToday: 0, tokenHistory: [], overrides: [] };
     });
     
     const updated: StorageSchema = { ...data, config: result.data, state };
@@ -120,7 +126,9 @@ const OptionsPage: React.FC = () => {
     
     const val = field === "amount" ? (rawVal === "" ? "" : parseInt(rawVal)) : rawVal;
     const targets = [...data.config[domain].refillTargets];
-    (targets[index] as any)[field] = val;
+    const target = targets[index];
+    if (field === "domain") target.domain = normalizeDomain(rawVal);
+    else if (field === "amount") target.amount = val as number;
 
     const config = { ...data.config, [domain]: { ...data.config[domain], refillTargets: targets } };
     setData({ ...data, config: config as any });
@@ -209,7 +217,8 @@ const OptionsPage: React.FC = () => {
               onClick={() => {
                 const d = prompt("domain:");
                 if (d) {
-                  const config = { ...data.config, [d]: { maxTokens: 100, drainRate: 10, regenRate: 0, cooldownMinutes: 30, refillTargets: [] } };
+                  const norm = normalizeDomain(d);
+                  const config = { ...data.config, [norm]: { maxTokens: 100, drainRate: 10, regenRate: 0, cooldownMinutes: 30, refillTargets: [] } };
                   save(config);
                 }
               }}
