@@ -1,9 +1,20 @@
-export interface SiteConfig {
-  maxTokens: number;
-  drainRate: number;
-  cooldownMinutes: number;
-  refillTargets: { domain: string; amount: number }[];
-}
+import { z } from "zod";
+
+export const RefillTargetSchema = z.object({
+  domain: z.string().min(1),
+  amount: z.number().min(0),
+});
+
+export const SiteConfigSchema = z.object({
+  maxTokens: z.number().min(1),
+  drainRate: z.number().min(0),
+  cooldownMinutes: z.number().min(0),
+  refillTargets: z.array(RefillTargetSchema),
+});
+
+export const StorageConfigSchema = z.record(z.string(), SiteConfigSchema);
+
+export interface SiteConfig extends z.infer<typeof SiteConfigSchema> {}
 
 export interface SiteState {
   currentTokens: number;
