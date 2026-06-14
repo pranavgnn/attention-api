@@ -4,7 +4,14 @@ import { tick, applyOverride } from "../shared/tokenEngine";
 // We use a 1s interval for real-time tracking while active.
 setInterval(async () => {
   const activeTab = await getActiveTab();
-  const domain = activeTab ? new URL(activeTab.url!).hostname.replace("www.", "") : null;
+  let domain = null;
+  if (activeTab?.url && activeTab.url.startsWith("http")) {
+    try {
+      domain = new URL(activeTab.url).hostname.replace("www.", "");
+    } catch (e) {
+      // Invalid URL, skip
+    }
+  }
   await tick(domain);
 }, 1000);
 
