@@ -42,7 +42,7 @@ const OptionsPage: React.FC = () => {
     setYamlConfig(stringifyToYaml(storage.config));
   };
 
-  const save = async (config: Record<string, SiteConfig>) => {
+  const save = async (config: Record<string, SiteConfig>, showToast = true) => {
     if (!data) return;
     const state = { ...data.state };
     Object.keys(config).forEach(d => {
@@ -52,7 +52,27 @@ const OptionsPage: React.FC = () => {
     await setStorage(updated);
     setData(updated);
     setYamlConfig(stringifyToYaml(config));
-    toast.success("configuration saved");
+    if (showToast) toast.success("configuration saved");
+  };
+
+  const [debounceTimer, setDebounceTimer] = useState<number | null>(null);
+
+  const debouncedSave = (config: Record<string, SiteConfig>) => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    const timer = window.setTimeout(() => {
+      save(config);
+    }, 500);
+    setDebounceTimer(timer);
+  };
+
+  const updateField = (domain: string, field: keyof SiteConfig, val: any) => {
+    if (!data) return;
+    const config = { ...data.config, [domain]: { ...data.config[domain], [field]: val } };
+    
+    // Immediate state update for UI responsiveness
+    setData({ ...data, config });
+    
+    debouncedSave(config);
   };
 
   const handleApplyYaml = () => {
@@ -64,12 +84,6 @@ const OptionsPage: React.FC = () => {
       setError(e.message);
       toast.error("invalid configuration");
     }
-  };
-
-  const updateField = (domain: string, field: keyof SiteConfig, val: any) => {
-    if (!data) return;
-    const config = { ...data.config, [domain]: { ...data.config[domain], [field]: val } };
-    save(config);
   };
 
   const addRefillTarget = (domain: string) => {
