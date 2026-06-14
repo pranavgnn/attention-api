@@ -46,10 +46,12 @@ const OptionsPage: React.FC = () => {
   const save = async (config: Record<string, SiteConfig>, showToast = true) => {
     if (!data) return;
     
-    // Validate with Zod
     const result = StorageConfigSchema.safeParse(config);
     if (!result.success) {
-      if (showToast) toast.error("invalid configuration structure");
+      if (showToast) {
+        const firstError = result.error.issues[0];
+        toast.error(`${firstError.path.join(".")}: ${firstError.message}`);
+      }
       return;
     }
 
@@ -74,13 +76,17 @@ const OptionsPage: React.FC = () => {
   };
 
   const updateField = (domain: string, field: keyof SiteConfig, rawVal: string) => {
-    if (!data || rawVal === "") return;
-    const val = parseInt(rawVal);
-    if (isNaN(val)) return;
+    if (!data) return;
+    
+    const isNum = ["maxTokens", "drainRate", "cooldownMinutes"].includes(field);
+    const val = isNum ? (rawVal === "" ? "" : parseInt(rawVal)) : rawVal;
 
     const config = { ...data.config, [domain]: { ...data.config[domain], [field]: val } };
-    setData({ ...data, config });
-    debouncedSave(config);
+    setData({ ...data, config: config as any });
+
+    if (val !== "" && (!isNum || !isNaN(val as number))) {
+      debouncedSave(config as any);
+    }
   };
 
   const handleApplyJson = () => {
@@ -109,16 +115,19 @@ const OptionsPage: React.FC = () => {
     save(config);
   };
 
-  const updateRefillTarget = (domain: string, index: number, field: "domain" | "amount", val: string) => {
-    if (!data || val === "") return;
+  const updateRefillTarget = (domain: string, index: number, field: "domain" | "amount", rawVal: string) => {
+    if (!data) return;
+    
+    const val = field === "amount" ? (rawVal === "" ? "" : parseInt(rawVal)) : rawVal;
     const targets = [...data.config[domain].refillTargets];
-    const parsedVal = field === "amount" ? parseInt(val) : val;
-    if (field === "amount" && isNaN(parsedVal as number)) return;
+    (targets[index] as any)[field] = val;
 
-    targets[index] = { ...targets[index], [field]: parsedVal };
     const config = { ...data.config, [domain]: { ...data.config[domain], refillTargets: targets } };
-    setData({ ...data, config });
-    debouncedSave(config);
+    setData({ ...data, config: config as any });
+
+    if (val !== "" && (field !== "amount" || !isNaN(val as number))) {
+      debouncedSave(config as any);
+    }
   };
 
   if (!data) return <div className="p-12 text-xs lowercase opacity-40 font-mono">loading system...</div>;
