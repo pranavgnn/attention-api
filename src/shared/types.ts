@@ -8,6 +8,7 @@ export const RefillTargetSchema = z.object({
 export const SiteConfigSchema = z.object({
   maxTokens: z.number().min(1),
   drainRate: z.number().min(0),
+  regenRate: z.number().min(0).default(0),
   cooldownMinutes: z.number().min(0),
   refillTargets: z.array(RefillTargetSchema),
 });

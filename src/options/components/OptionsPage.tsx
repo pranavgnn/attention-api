@@ -168,7 +168,7 @@ const OptionsPage: React.FC = () => {
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-4 gap-4">
                     <div className="space-y-1.5">
                       <div className="t-label text-[11px]">tokens <Tooltip text="Max reserve. Site blocks when zero." /></div>
                       <input type="number" className="t-input w-full p-2" value={site.maxTokens} onChange={e => updateField(domain, "maxTokens", e.target.value)} />
@@ -176,6 +176,10 @@ const OptionsPage: React.FC = () => {
                     <div className="space-y-1.5">
                       <div className="t-label text-[11px]">drain <Tooltip text="Loss per 60s of active use." /></div>
                       <input type="number" className="t-input w-full p-2" value={site.drainRate} onChange={e => updateField(domain, "drainRate", e.target.value)} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="t-label text-[11px]">regen <Tooltip text="Automatic recovery per hour when NOT in use." /></div>
+                      <input type="number" className="t-input w-full p-2" value={site.regenRate ?? 0} onChange={e => updateField(domain, "regenRate", e.target.value)} />
                     </div>
                     <div className="space-y-1.5">
                       <div className="t-label text-[11px]">cooldown <Tooltip text="Minutes to unlock after block." /></div>
@@ -205,7 +209,7 @@ const OptionsPage: React.FC = () => {
               onClick={() => {
                 const d = prompt("domain:");
                 if (d) {
-                  const config = { ...data.config, [d]: { maxTokens: 100, drainRate: 10, cooldownMinutes: 30, refillTargets: [] } };
+                  const config = { ...data.config, [d]: { maxTokens: 100, drainRate: 10, regenRate: 0, cooldownMinutes: 30, refillTargets: [] } };
                   save(config);
                 }
               }}

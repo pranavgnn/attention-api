@@ -39,7 +39,6 @@ export async function tick(activeDomain: string | null): Promise<void> {
             const targetState = storage.state[refill.domain];
             const targetConfig = storage.config[refill.domain];
             if (targetState && targetConfig) {
-              // Refill amount is also divided by 60 if we assume it's per-minute refill
               const refillPerSecond = refill.amount / 60;
               targetState.currentTokens = Math.min(
                 targetConfig.maxTokens,
@@ -48,6 +47,15 @@ export async function tick(activeDomain: string | null): Promise<void> {
             }
           }
         }
+      }
+    } else {
+      // Natural regen when site is NOT active
+      const regenPerSecond = (config.regenRate || 0) / 3600;
+      if (regenPerSecond > 0 && state.status === "active") {
+        state.currentTokens = Math.min(
+          config.maxTokens,
+          state.currentTokens + regenPerSecond
+        );
       }
     }
 

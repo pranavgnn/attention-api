@@ -27,6 +27,7 @@ const Dashboard: React.FC = () => {
     const newConfig: SiteConfig = { 
       maxTokens: 100, 
       drainRate: 10, 
+      regenRate: 0,
       cooldownMinutes: 30, 
       refillTargets: [] 
     };

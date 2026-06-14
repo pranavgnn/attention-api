@@ -4,30 +4,35 @@ export const DEFAULT_CONFIG: Record<string, SiteConfig> = {
   "twitter.com": {
     maxTokens: 100,
     drainRate: 10,
+    regenRate: 0,
     cooldownMinutes: 30,
     refillTargets: [],
   },
   "reddit.com": {
     maxTokens: 100,
     drainRate: 8,
+    regenRate: 0,
     cooldownMinutes: 30,
     refillTargets: [],
   },
   "instagram.com": {
     maxTokens: 100,
     drainRate: 10,
+    regenRate: 0,
     cooldownMinutes: 30,
     refillTargets: [],
   },
   "youtube.com": {
     maxTokens: 150,
     drainRate: 6,
+    regenRate: 0,
     cooldownMinutes: 20,
     refillTargets: [],
   },
   "read.amazon.com": {
     maxTokens: 200,
     drainRate: 0,
+    regenRate: 0,
     cooldownMinutes: 0,
     refillTargets: [
       { domain: "twitter.com", amount: 20 },
@@ -37,6 +42,7 @@ export const DEFAULT_CONFIG: Record<string, SiteConfig> = {
   "duolingo.com": {
     maxTokens: 200,
     drainRate: 0,
+    regenRate: 0,
     cooldownMinutes: 0,
     refillTargets: [
       { domain: "twitter.com", amount: 15 },
@@ -46,6 +52,7 @@ export const DEFAULT_CONFIG: Record<string, SiteConfig> = {
   "github.com": {
     maxTokens: 300,
     drainRate: 1,
+    regenRate: 0,
     cooldownMinutes: 10,
     refillTargets: [],
   },
