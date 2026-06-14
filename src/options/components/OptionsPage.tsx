@@ -5,6 +5,7 @@ import { parseYamlConfig, stringifyToYaml } from "../../shared/configParser";
 import CodeMirror from "@uiw/react-codemirror";
 import { yaml } from "@codemirror/lang-yaml";
 import { vscodeDark } from "@uiw/codemirror-theme-vscode";
+import { Toaster, toast } from "sonner";
 
 const Tooltip: React.FC<{ text: string }> = ({ text }) => {
   const [visible, setVisible] = useState(false);
@@ -51,6 +52,18 @@ const OptionsPage: React.FC = () => {
     await setStorage(updated);
     setData(updated);
     setYamlConfig(stringifyToYaml(config));
+    toast.success("configuration saved");
+  };
+
+  const handleApplyYaml = () => {
+    try {
+      const config = parseYamlConfig(yamlConfig);
+      save(config);
+      setError(null);
+    } catch (e: any) { 
+      setError(e.message);
+      toast.error("invalid configuration");
+    }
   };
 
   const updateField = (domain: string, field: keyof SiteConfig, val: any) => {
@@ -83,6 +96,7 @@ const OptionsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background text-slate-200 p-10 max-w-6xl mx-auto space-y-10 font-mono text-sm">
+      <Toaster theme="dark" position="bottom-right" richColors />
       <header className="flex justify-between items-end border-b border-border pb-6">
         <div>
           <h1 className="text-xl font-bold tracking-tight lowercase">attention.config</h1>
@@ -165,7 +179,7 @@ const OptionsPage: React.FC = () => {
               <CodeMirror value={yamlConfig} height="550px" theme={vscodeDark} extensions={[yaml()]} onChange={setYamlConfig} basicSetup={{ lineNumbers: true, foldGutter: false }} />
             </div>
             {error && <div className="text-red text-xs lowercase">{error}</div>}
-            <button onClick={() => { try { save(parseYamlConfig(yamlConfig)); setError(null); } catch(e: any) { setError(e.message); } }} className="t-btn text-accent border-accent/20 font-bold px-6 py-3">apply configuration</button>
+            <button onClick={handleApplyYaml} className="t-btn text-accent border-accent/20 font-bold px-6 py-3">apply configuration</button>
           </div>
         )}
       </main>
