@@ -8,6 +8,8 @@ export async function tick(activeDomain: string | null): Promise<void> {
     const config = storage.config[domain];
     const state = storage.state[domain];
 
+    if (!config || !state) continue;
+
     if (state.status === "throttled" || state.status === "cooldown") {
       if (state.throttledAt) {
         const cooldownMs = config.cooldownMinutes * 60 * 1000;
