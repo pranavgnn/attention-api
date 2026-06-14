@@ -3,6 +3,8 @@ import { StorageSchema } from "../shared/types";
 import { normalizeDomain } from "../shared/configParser";
 
 let countdownInterval: number | null = null;
+let isCurrentlyBlocked = false;
+let originalHTML = "";
 
 async function checkStatus() {
   const data = await chrome.storage.local.get(STORAGE_KEY);
@@ -13,69 +15,85 @@ async function checkStatus() {
   const state = storage.state[domain];
   const config = storage.config[domain];
 
-  if (state && state.status === "throttled") {
+  const shouldBeBlocked = state && state.status === "throttled";
+
+  if (shouldBeBlocked && !isCurrentlyBlocked) {
     const refillSources = Object.keys(storage.config).filter(d => 
+      storage.config[d].refillTargets && 
       storage.config[d].refillTargets.some(t => normalizeDomain(t.domain) === domain)
     );
     blockPage(domain, state.throttledAt, config.cooldownMinutes, refillSources);
-  } else {
+  } else if (!shouldBeBlocked && isCurrentlyBlocked) {
     unblockPage();
+  } else if (shouldBeBlocked && isCurrentlyBlocked) {
+    // Just update countdown if already blocked
+    updateCountdown(state.throttledAt, config.cooldownMinutes);
   }
 }
 
 function blockPage(domain: string, throttledAt: number | null, cooldown: number, refillSources: string[]) {
-  if (document.getElementById("attention-api-blocker")) {
-    updateCountdown(throttledAt, cooldown);
-    return;
-  }
+  isCurrentlyBlocked = true;
+  originalHTML = document.documentElement.innerHTML;
 
-  document.body.style.display = 'none';
-  const blocker = document.createElement("div");
-  blocker.id = "attention-api-blocker";
-  
-  blocker.style.cssText = `
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: #0a0b10; color: #94a3b8; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; z-index: 2147483647;
-    font-family: 'Inter', 'Menlo', monospace; text-transform: lowercase;
-    padding: 40px; text-align: center; overflow: hidden;
-  `;
+  const remainingSeconds = throttledAt ? Math.max(0, Math.ceil((throttledAt + cooldown * 60 * 1000 - Date.now()) / 1000)) : 0;
+  const initialM = Math.floor(remainingSeconds / 60);
+  const initialS = remainingSeconds % 60;
 
-  blocker.innerHTML = `
-    <div style="max-width: 500px; width: 100%; animation: fadeIn 0.8s ease-out;">
-      <div style="color: #6366f1; font-size: 11px; font-weight: 700; letter-spacing: 0.2em; margin-bottom: 24px;">[system.interrupt]</div>
-      <h1 style="color: #f8fafc; font-size: 24px; font-weight: 500; margin-bottom: 8px; letter-spacing: -0.02em;">429: too many requests</h1>
-      <p style="color: #64748b; font-size: 13px; margin-bottom: 48px;">attention reserve depleted for <span style="color: #6366f1;">${domain}</span></p>
-      
-      <div style="background: #0f172a; border: 1px solid #1e293b; padding: 32px; border-radius: 4px; margin-bottom: 48px;">
-        <div id="countdown-label" style="color: #ef4444; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; margin-bottom: 8px;">cooldown.active</div>
-        <div id="countdown-timer" style="color: #f8fafc; font-size: 32px; font-weight: 400; font-family: 'JetBrains Mono', 'Courier New', monospace;">00:00</div>
-      </div>
+  const html = `
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>429 too many requests</title>
+      <style>
+        :root { --bg: #0a0b10; --surface: #0f111a; --border: #1e1b4b; --accent: #6366f1; --red: #ef4444; --green: #4ade80; --text: #94a3b8; --text-bright: #f8fafc; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', 'JetBrains Mono', monospace; display: flex; align-items: center; justify-content: center; min-height: 100vh; text-transform: lowercase; overflow: hidden; }
+        .container { max-width: 440px; width: 90%; animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+        .meta { color: var(--accent); font-size: 10px; font-weight: 700; letter-spacing: 0.2em; margin-bottom: 16px; opacity: 0.8; }
+        h1 { color: var(--text-bright); font-size: 20px; font-weight: 500; margin-bottom: 8px; letter-spacing: -0.01em; }
+        .desc { font-size: 13px; color: #64748b; margin-bottom: 40px; }
+        .domain { color: var(--accent); font-weight: 600; }
+        .card { background: var(--surface); border: 1px solid var(--border); padding: 32px; border-radius: 4px; margin-bottom: 40px; position: relative; }
+        .card::before { content: ''; position: absolute; top: -1px; left: 20px; right: 20px; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0.3; }
+        .label { color: var(--red); font-size: 10px; font-weight: 700; letter-spacing: 0.15em; margin-bottom: 12px; }
+        #timer { color: var(--text-bright); font-size: 40px; font-weight: 300; font-family: 'JetBrains Mono', monospace; tabular-nums: true; }
+        .refill-section { text-align: left; }
+        .refill-label { color: var(--green); font-size: 10px; font-weight: 700; letter-spacing: 0.15em; margin-bottom: 16px; }
+        .refill-list { display: flex; flex-direction: column; gap: 8px; }
+        .refill-item { display: flex; justify-content: space-between; align-items: center; background: var(--surface); border: 1px solid var(--border); padding: 12px 16px; color: var(--text); text-decoration: none; border-radius: 4px; font-size: 12px; transition: all 0.2s ease; }
+        .refill-item:hover { border-color: var(--accent); color: var(--text-bright); transform: translateX(4px); }
+        .refill-item span:last-child { color: var(--accent); font-size: 10px; font-weight: 600; }
+        .empty { color: #475569; font-size: 11px; font-style: italic; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="meta">[system.interrupt]</div>
+        <h1>429: too many requests</h1>
+        <p class="desc">attention reserve depleted for <span class="domain">${domain}</span></p>
+        
+        <div class="card">
+          <div class="label">cooldown.active</div>
+          <div id="timer">${initialM.toString().padStart(2, '0')}:${initialS.toString().padStart(2, '0')}</div>
+        </div>
 
-      <div style="text-align: left;">
-        <div style="color: #4ade80; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; margin-bottom: 16px;">refill.available</div>
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          ${refillSources.length > 0 ? refillSources.map(s => `
-            <a href="https://${s}" style="
-              display: flex; justify-content: space-between; align-items: center;
-              background: #0f172a; border: 1px solid #1e293b; padding: 12px 16px;
-              color: #94a3b8; text-decoration: none; border-radius: 4px; font-size: 13px;
-              transition: all 0.2s ease;
-            " onmouseover="this.style.borderColor='#6366f1'; this.style.color='#f8fafc'" onmouseout="this.style.borderColor='#1e293b'; this.style.color='#94a3b8'">
-              <span>${s}</span>
-              <span style="color: #6366f1; font-size: 10px;">→ refill</span>
-            </a>
-          `).join("") : `<div style="color: #475569; font-size: 12px; font-style: italic;">no active refill sources configured.</div>`}
+        <div class="refill-section">
+          <div class="refill-label">refill.sources</div>
+          <div class="refill-list">
+            ${refillSources.length > 0 ? refillSources.map(s => `
+              <a href="https://${s}" class="refill-item">
+                <span>${s}</span>
+                <span>→ protocol</span>
+              </a>
+            `).join("") : `<div class="empty">no active refill sources configured.</div>`}
+          </div>
         </div>
       </div>
-    </div>
-    <style>
-      @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-      body { overflow: hidden !important; }
-    </style>
+    </body>
   `;
 
-  document.documentElement.appendChild(blocker);
+  document.documentElement.innerHTML = html;
   startCountdown(throttledAt, cooldown);
 }
 
@@ -83,7 +101,7 @@ function startCountdown(throttledAt: number | null, cooldown: number) {
   if (countdownInterval) clearInterval(countdownInterval);
   
   const update = () => {
-    const timerEl = document.getElementById("countdown-timer");
+    const timerEl = document.getElementById("timer");
     if (!timerEl || !throttledAt) return;
 
     const expiry = throttledAt + (cooldown * 60 * 1000);
@@ -92,7 +110,7 @@ function startCountdown(throttledAt: number | null, cooldown: number) {
     if (diff <= 0) {
       timerEl.innerText = "00:00";
       clearInterval(countdownInterval!);
-      checkStatus(); // Re-check to unblock
+      checkStatus();
       return;
     }
 
@@ -106,20 +124,21 @@ function startCountdown(throttledAt: number | null, cooldown: number) {
 }
 
 function updateCountdown(throttledAt: number | null, cooldown: number) {
-  // Restart interval with new data if needed
-  startCountdown(throttledAt, cooldown);
+  // If timer element missing but we should be blocked, re-run checkStatus
+  if (!document.getElementById("timer") && isCurrentlyBlocked) {
+    isCurrentlyBlocked = false; // Force re-block
+    checkStatus();
+    return;
+  }
 }
 
 function unblockPage() {
-  const blocker = document.getElementById("attention-api-blocker");
-  if (blocker) {
-    blocker.remove();
-    document.body.style.display = '';
-    if (countdownInterval) {
-      clearInterval(countdownInterval);
-      countdownInterval = null;
-    }
+  isCurrentlyBlocked = false;
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
   }
+  window.location.reload(); // Hard reload is safest after replacing entire innerHTML
 }
 
 chrome.storage.onChanged.addListener((changes) => {
